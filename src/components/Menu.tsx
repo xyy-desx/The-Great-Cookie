@@ -137,10 +137,10 @@ const Menu: React.FC<MenuProps> = ({ onOrderClick }) => {
                     {filteredCookies.map((cookie, index) => (
                         <div
                             key={cookie.id}
-                            className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 animate-slide-up opacity-0 overflow-hidden group"
+                            className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 animate-slide-up opacity-0 overflow-hidden group flex flex-col h-full"
                             style={{ animationDelay: `${0.2 + index * 0.1}s` }}
                         >
-                            <div className="relative overflow-hidden h-64">
+                            <div className="relative overflow-hidden h-64 shrink-0 bg-gray-100">
                                 <img
                                     src={cookie.image}
                                     alt={cookie.name}
@@ -155,7 +155,7 @@ const Menu: React.FC<MenuProps> = ({ onOrderClick }) => {
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             </div>
 
-                            <div className="p-6 space-y-3">
+                            <div className="p-6 space-y-3 flex flex-col flex-grow">
                                 <div className="flex justify-between items-start">
                                     <h3 className="text-xl font-black text-black flex-1">
                                         {cookie.name}
@@ -164,19 +164,21 @@ const Menu: React.FC<MenuProps> = ({ onOrderClick }) => {
                                         {cookie.category}
                                     </span>
                                 </div>
-                                <p className="text-gray-700 text-sm leading-relaxed italic">
+                                <p className="text-gray-700 text-sm leading-relaxed italic line-clamp-3">
                                     {cookie.description}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                    <span className="font-semibold">Ingredients:</span> {cookie.ingredients}
+                                    <span className="font-semibold">Ingredients:</span> <span className="line-clamp-2">{cookie.ingredients}</span>
                                 </p>
 
-                                <button
-                                    onClick={() => onOrderClick(cookie.name)}
-                                    className="w-full mt-4 bg-black text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95"
-                                >
-                                    Order Now
-                                </button>
+                                <div className="mt-auto pt-4">
+                                    <button
+                                        onClick={() => onOrderClick(cookie.name)}
+                                        className="w-full bg-black text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95"
+                                    >
+                                        Order Now
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
