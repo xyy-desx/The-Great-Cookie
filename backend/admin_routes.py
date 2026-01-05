@@ -39,7 +39,25 @@ class OrderUpdate(BaseModel):
     cookie_name: Optional[str] = None
     contact: Optional[str] = None
 
-# ... (rest of file)
+# Auth dependency
+def get_current_admin(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = authorization.replace("Bearer ", "")
+    username = verify_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return username
+
+# Login
+@router.post("/login", response_model=LoginResponse)
+def login(credentials: LoginRequest, db: Session = Depends(get_db)):
+    admin = db.query(Admin).filter(Admin.username == credentials.username).first()
+    if not admin or not verify_password(credentials.password, admin.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    access_token = create_access_token(data={"sub": admin.username})
+    return {"access_token": access_token}
 
 @router.patch("/orders/{order_id}")
 def update_order(
