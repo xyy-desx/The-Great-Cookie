@@ -25,7 +25,7 @@ async def send_order_notification(order_data: dict):
     """Send email notification when a new order is placed"""
     
     # Get notification email from env or use default
-    notification_email = os.getenv("NOTIFICATION_EMAIL", "zilong.padilla@gmail.com")
+    notification_email = os.getenv("NOTIFICATION_EMAIL", "thegreatcookiebyalex@gmail.com")
     
     # Create email body
     html_body = f"""
