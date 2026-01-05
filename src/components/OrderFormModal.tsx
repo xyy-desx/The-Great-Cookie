@@ -30,6 +30,13 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, select
 
     const handleMessengerOrder = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validation
+        if (!name || !contact || !cookie) {
+            alert("Please fill in your Name, Contact, and ensure a Cookie is selected.");
+            return;
+        }
+
         setLoading(true); // Show loading state while saving
 
         // 1. Save to Database First (to capture Revenue)

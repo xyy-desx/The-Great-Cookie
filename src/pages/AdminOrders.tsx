@@ -49,9 +49,19 @@ const AdminOrders: React.FC = () => {
 
     useEffect(() => {
         fetchOrders();
+
+        // Poll for new orders every 30 seconds
+        const interval = setInterval(() => {
+            fetchOrders(true); // silent refresh
+        }, 30000);
+
+        return () => clearInterval(interval);
     }, [filterStatus]);
 
-    const fetchOrders = async () => {
+    // Track previous pending count to play sound
+    const [prevPendingCount, setPrevPendingCount] = useState(0);
+
+    const fetchOrders = async (silent = false) => {
         const token = localStorage.getItem('admin_token');
         const url = filterStatus === 'all'
             ? `${API_URL.replace('/api', '')}/api/admin/orders`
@@ -61,7 +71,18 @@ const AdminOrders: React.FC = () => {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
-            setOrders(await response.json());
+            const data = await response.json();
+            setOrders(data);
+
+            // Check for new pending orders for notification
+            const currentPending = data.filter((o: Order) => o.status === 'pending').length;
+            if (currentPending > prevPendingCount && prevPendingCount !== 0) {
+                // Play notification sound
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                audio.play().catch(e => console.log('Audio play failed', e));
+                alert("🔔 New Order Received!");
+            }
+            setPrevPendingCount(currentPending);
         }
     };
 
@@ -255,6 +276,7 @@ const AdminOrders: React.FC = () => {
                                     <th className="px-6 py-4 text-left font-bold">Cookie</th>
                                     <th className="px-6 py-4 text-left font-bold">Qty</th>
                                     <th className="px-6 py-4 text-left font-bold">Payment</th>
+                                    <th className="px-6 py-4 text-left font-bold">Source</th>
                                     <th className="px-6 py-4 text-left font-bold">Status</th>
                                     <th className="px-6 py-4 text-left font-bold">Date</th>
                                     <th className="px-6 py-4 text-left font-bold">Actions</th>
@@ -267,8 +289,17 @@ const AdminOrders: React.FC = () => {
                                         <td className="px-6 py-4 font-semibold">{order.customer_name}</td>
                                         <td className="px-6 py-4 text-sm">{order.contact}</td>
                                         <td className="px-6 py-4">{order.cookie_name}</td>
-                                        <td className="px-6 py-4">{order.quantity}</td>
+                                        <td className="px-6 py-4 font-bold">{order.quantity}</td>
                                         <td className="px-6 py-4 text-sm">{order.payment_method || 'N/A'}</td>
+                                        <td className="px-6 py-4 text-sm">
+                                            {order.order_source === 'messenger' ? (
+                                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-bold">Messenger</span>
+                                            ) : order.order_source === 'manual' ? (
+                                                <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-xs font-bold">Manual</span>
+                                            ) : (
+                                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs font-bold">Website</span>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4">
                                             <select
                                                 value={order.status}
