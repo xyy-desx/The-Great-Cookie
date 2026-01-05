@@ -378,6 +378,12 @@ const AdminOrders: React.FC = () => {
                                                 Edit
                                             </button>
                                             <button
+                                                onClick={() => setSelectedOrder(order)}
+                                                className="text-blue-600 hover:text-blue-800 font-semibold text-sm mr-3"
+                                            >
+                                                View
+                                            </button>
+                                            <button
                                                 onClick={() => handleDeleteOrder(order.id)}
                                                 className="text-red-600 hover:text-red-800 font-semibold text-sm"
                                             >
