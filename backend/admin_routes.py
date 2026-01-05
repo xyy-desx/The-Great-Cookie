@@ -210,12 +210,7 @@ def update_order(
     db.commit()
     db.refresh(order)
     
-    # Auto-delete if status changed to completed
-    if old_status != "completed" and order.status == "completed":
-        # Order will still be in export because we fetched it before deletion
-        db.delete(order)
-        db.commit()
-        return {"message": "Order completed and archived", "order": order}
+    return order
     
     return order
 
