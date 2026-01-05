@@ -126,9 +126,21 @@ def create_cookie(cookie: CookieCreate, db: Session = Depends(get_db)):
     db.refresh(db_cookie)
     return db_cookie
 
+# Startup Event to Launch Bot
+@app.on_event("startup")
+async def startup_event():
+    import asyncio
+    from discord_bot import client
+    token = os.getenv("DISCORD_BOT_TOKEN")
+    if token:
+        asyncio.create_task(client.start(token))
+    else:
+        print("⚠️ No DISCORD_BOT_TOKEN found. Bot will not start.")
+
 @app.post("/api/orders", response_model=OrderResponse)
 async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     from email_service import send_order_notification
+    from discord_bot import send_bot_notification
     import asyncio
     
     # Calculate total price if missing (Fix for 0 Revenue)
@@ -147,15 +159,14 @@ async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_order)
     
-    # Send email notification asynchronously (don't wait for it)
+    # Send notifications asynchronously
     try:
-        from email_service import send_discord_notification
+        # 1. Email (Legacy/Fallback)
         asyncio.create_task(send_order_notification(order.dict()))
-        # Send Discord Notification as well
-        asyncio.create_task(send_discord_notification(order.dict()))
+        # 2. Discord Bot (Primary - Rich Buttons)
+        asyncio.create_task(send_bot_notification(order.dict(), db_order.id))
     except Exception as e:
-        print(f"⚠️  Email notification failed: {str(e)}")
-        # Don't fail the order creation if email fails
+        print(f"⚠️ Notification system error: {str(e)}")
     
     return db_order
 
