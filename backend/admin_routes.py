@@ -97,6 +97,17 @@ def delete_cookie(
     db.commit()
     return {"message": "Cookie deleted"}
 
+    db.delete(cookie)
+    db.commit()
+    return {"message": "Cookie deleted"}
+
+@router.get("/orders")
+def get_admin_orders(status: Optional[str] = None, db: Session = Depends(get_db), admin: str = Depends(get_current_admin)):
+    query = db.query(Order)
+    if status and status != 'all':
+        query = query.filter(Order.status == status)
+    return query.order_by(Order.created_at.desc()).all()
+
 @router.patch("/orders/{order_id}")
 def update_order(
     order_id: int, 
