@@ -175,10 +175,10 @@ async def test_email():
     }
     try:
         result = await send_order_notification(test_data)
-        if result:
+        if result == "SUCCESS":
             return {"status": "success", "message": "Email sent successfully!"}
         else:
-            return {"status": "error", "message": "Email function returned False (check logs)"}
+            return {"status": "error", "message": result}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 

@@ -84,7 +84,8 @@ async def send_order_notification(order_data: dict):
     try:
         # Send email
         await fastmail.send_message(message)
-        return True
+        return "SUCCESS"
     except Exception as e:
-        print(f"❌ Failed to send email notification: {str(e)}")
-        return False
+        error_msg = f"Failed to send email: {str(e)}"
+        print(f"❌ {error_msg}")
+        return error_msg
