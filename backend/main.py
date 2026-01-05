@@ -19,9 +19,14 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="The Great Cookie API")
 
 # CORS
+origins = ["http://localhost:5173"]
+cors_env = os.getenv("CORS_ORIGINS")
+if cors_env:
+    origins.extend([origin.strip() for origin in cors_env.split(",")])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
