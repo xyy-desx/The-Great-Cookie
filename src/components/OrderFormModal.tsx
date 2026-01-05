@@ -28,10 +28,34 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, select
 
     if (!isOpen) return null;
 
-    const handleMessengerOrder = (e: React.FormEvent) => {
+    const handleMessengerOrder = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true); // Show loading state while saving
 
-        // Create order message for Facebook
+        // 1. Save to Database First (to capture Revenue)
+        try {
+            await fetch(`${API_URL}/orders`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer_name: name,
+                    contact: contact,
+                    cookie_name: cookie,
+                    quantity: quantity,
+                    notes: notes,
+                    delivery_address: deliveryAddress,
+                    total_price: null, // Backend calculates this
+                    payment_method: paymentMethod,
+                    delivery_date: deliveryDate,
+                    order_source: 'messenger' // Mark as Messenger order
+                }),
+            });
+        } catch (error) {
+            console.error("Failed to save messenger order to DB", error);
+            // Continue anyway so the user can still message
+        }
+
+        // 2. Create message for Facebook
         const fbMessage = `🍪 NEW ORDER from ${name}
 
 Cookie: ${cookie}
@@ -44,11 +68,13 @@ ${notes ? `Notes: ${notes}` : ''}
 
 Please confirm this order. Thank you!`;
 
-        // Open Facebook Messenger with pre-filled message
+        // 3. Open Messenger
         const messengerUrl = `https://m.me/homemadebakedpastries?text=${encodeURIComponent(fbMessage)}`;
         window.open(messengerUrl, '_blank');
 
+        setLoading(false);
         resetForm();
+        onClose();
     };
 
     const handleDirectOrder = async (e: React.FormEvent) => {

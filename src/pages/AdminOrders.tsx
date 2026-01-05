@@ -25,6 +25,19 @@ const AdminOrders: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
+    // Manual Order State
+    const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+    const [manualOrder, setManualOrder] = useState({
+        customer_name: '',
+        contact: '',
+        cookie_name: 'Alcapone Cookie',
+        quantity: 1,
+        notes: '',
+        payment_method: 'Cash',
+        order_source: 'manual'
+    });
+    const [submitting, setSubmitting] = useState(false);
+
     useEffect(() => {
         fetchOrders();
     }, [filterStatus]);
@@ -56,6 +69,46 @@ const AdminOrders: React.FC = () => {
 
         if (response.ok) {
             fetchOrders(); // Refresh orders
+        }
+    };
+
+    const handleCreateManualOrder = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        const token = localStorage.getItem('admin_token');
+
+        try {
+            const response = await fetch(`${API_URL.replace('/api', '')}/api/orders`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ...manualOrder,
+                    total_price: null // Backend will calculate
+                })
+            });
+
+            if (response.ok) {
+                fetchOrders();
+                setIsManualModalOpen(false);
+                setManualOrder({
+                    customer_name: '',
+                    contact: '',
+                    cookie_name: 'Alcapone Cookie',
+                    quantity: 1,
+                    notes: '',
+                    payment_method: 'Cash',
+                    order_source: 'manual'
+                });
+            } else {
+                alert('Failed to create order');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error creating order');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -106,6 +159,12 @@ const AdminOrders: React.FC = () => {
                         >
                             📥 Export Orders
                         </a>
+                        <button
+                            onClick={() => setIsManualModalOpen(true)}
+                            className="bg-black text-white px-4 py-2 rounded-full font-semibold hover:bg-gray-800 transition-colors flex items-center gap-2"
+                        >
+                            + Create Manual Order
+                        </button>
                         <Link to="/admin/dashboard" className="text-gray-600 hover:text-black">← Back to Dashboard</Link>
                     </div>
                 </div>
@@ -293,6 +352,91 @@ const AdminOrders: React.FC = () => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Manual Order Modal */}
+            {isManualModalOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setIsManualModalOpen(false)}
+                >
+                    <div
+                        className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 md:p-8 transform"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-black">Create Order</h2>
+                            <button onClick={() => setIsManualModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">✕</button>
+                        </div>
+                        <form onSubmit={handleCreateManualOrder} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Customer Name</label>
+                                <input
+                                    type="text"
+                                    required
+                                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl"
+                                    value={manualOrder.customer_name}
+                                    onChange={e => setManualOrder({ ...manualOrder, customer_name: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Contact</label>
+                                <input
+                                    type="text"
+                                    required
+                                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl"
+                                    value={manualOrder.contact}
+                                    onChange={e => setManualOrder({ ...manualOrder, contact: e.target.value })}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Cookie</label>
+                                    <select
+                                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl"
+                                        value={manualOrder.cookie_name}
+                                        onChange={e => setManualOrder({ ...manualOrder, cookie_name: e.target.value })}
+                                    >
+                                        <option value="Alcapone Cookie">Alcapone Cookie</option>
+                                        <option value="Biscoff Campfire">Biscoff Campfire</option>
+                                        <option value="Chocobomb Walnut">Chocobomb Walnut</option>
+                                        <option value="Classic Belgian">Classic Belgian</option>
+                                        <option value="Funfetti Cookie">Funfetti Cookie</option>
+                                        <option value="Red Velvet">Red Velvet</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Quantity</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        required
+                                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl"
+                                        value={manualOrder.quantity}
+                                        onChange={e => setManualOrder({ ...manualOrder, quantity: parseInt(e.target.value) })}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Notes</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl"
+                                    placeholder="Optional"
+                                    value={manualOrder.notes}
+                                    onChange={e => setManualOrder({ ...manualOrder, notes: e.target.value })}
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="w-full bg-black text-white font-bold py-3 rounded-xl hover:bg-gray-800 disabled:opacity-50"
+                            >
+                                {submitting ? 'Creating...' : 'Create Order'}
+                            </button>
+                        </form>
                     </div>
                 </div>
             )}
