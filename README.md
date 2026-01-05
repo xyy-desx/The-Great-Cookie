@@ -38,14 +38,7 @@ A modern, full-stack e-commerce website for artisan cookies with a comprehensive
 - **SQLAlchemy** - ORM
 - **FastAPI Mail** - Email notifications
 
-## 🚀 Live Demo
 
-- **Website:** [Coming Soon]
-- **Admin Panel:** [Coming Soon]/admin
-
-### Admin Credentials (Demo)
-- Username: `alex`
-- Password: `Cookie2024!`
 
 ## 📦 Installation
 
