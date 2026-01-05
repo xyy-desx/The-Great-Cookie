@@ -161,10 +161,11 @@ async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     
     # Send notifications asynchronously
     try:
+        from email_service import send_discord_notification
         # 1. Email (Legacy/Fallback)
         asyncio.create_task(send_order_notification(order.dict()))
-        # 2. Discord Bot (Primary - Rich Buttons)
-        asyncio.create_task(send_bot_notification(order.dict(), db_order.id))
+        # 2. Discord Webhook (Simpler, Reliable)
+        asyncio.create_task(send_discord_notification(order.dict()))
     except Exception as e:
         print(f"⚠️ Notification system error: {str(e)}")
     
