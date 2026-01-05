@@ -7,3 +7,4 @@ python-dotenv==1.0.0
 python-multipart==0.0.6
 PyJWT==2.8.0
 aiosmtplib==3.0.1
+fastapi-mail==1.4.1
