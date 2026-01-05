@@ -5,7 +5,5 @@ psycopg2-binary==2.9.9
 pydantic==2.5.0
 python-dotenv==1.0.0
 python-multipart==0.0.6
-fastapi-cors==0.0.6
-python-jose[cryptography]
-passlib[bcrypt]
-aiosmtplib
+python-jose[cryptography]==3.3.0
+aiosmtplib==3.0.1
