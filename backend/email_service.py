@@ -7,14 +7,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Email configuration
+# Email configuration
+mail_port = int(os.getenv("SMTP_PORT", 465))
+print(f"📧 Configuring Email: Port {mail_port} (SSL: {mail_port==465})")
+
 conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("SMTP_USER", ""),
     MAIL_PASSWORD=os.getenv("SMTP_PASSWORD", ""),
     MAIL_FROM=os.getenv("SMTP_USER", ""),
-    MAIL_PORT=int(os.getenv("SMTP_PORT", 587)),
+    MAIL_PORT=mail_port,
     MAIL_SERVER=os.getenv("SMTP_HOST", "smtp.gmail.com"),
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
+    MAIL_STARTTLS=(mail_port == 587),
+    MAIL_SSL_TLS=(mail_port == 465),
     USE_CREDENTIALS=True,
     VALIDATE_CERTS=True
 )
