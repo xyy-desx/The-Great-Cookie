@@ -162,6 +162,26 @@ def create_review(review: ReviewCreate, db: Session = Depends(get_db)):
 def get_reviews(db: Session = Depends(get_db)):
     return db.query(Review).filter(Review.approved == True).order_by(Review.created_at.desc()).all()
 
+@app.get("/test-email")
+async def test_email():
+    from email_service import send_order_notification
+    test_data = {
+        "customer_name": "TEST USER",
+        "contact": "0000000000",
+        "cookie_name": "TEST COOKIE",
+        "quantity": 1,
+        "notes": "Direct API Test",
+        "order_source": "SERVER_TEST"
+    }
+    try:
+        result = await send_order_notification(test_data)
+        if result:
+            return {"status": "success", "message": "Email sent successfully!"}
+        else:
+            return {"status": "error", "message": "Email function returned False (check logs)"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
