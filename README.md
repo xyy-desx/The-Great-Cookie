@@ -169,8 +169,7 @@ This project is private and proprietary.
 
 ## 👨‍💻 Developer
 
-**Alex** - The Great Cookie by Alex
+**Desxzor Navarro** - 
 
 ---
 
-Built with ❤️ and 🍪
