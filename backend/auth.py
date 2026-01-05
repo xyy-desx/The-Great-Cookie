@@ -1,5 +1,5 @@
 import hashlib
-from jose import JWTError, jwt
+import jwt
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -30,5 +30,5 @@ def verify_token(token: str):
         if username is None:
             return None
         return username
-    except JWTError:
+    except jwt.DecodeError:
         return None
