@@ -75,7 +75,6 @@ const AdminOrders: React.FC = () => {
     const handleCreateManualOrder = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
-        const token = localStorage.getItem('admin_token');
 
         try {
             const response = await fetch(`${API_URL.replace('/api', '')}/api/orders`, {
