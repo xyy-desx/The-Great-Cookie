@@ -131,6 +131,16 @@ async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     from email_service import send_order_notification
     import asyncio
     
+    # Calculate total price if missing (Fix for 0 Revenue)
+    if not order.total_price:
+        # Find the cookie to get its price
+        cookie = db.query(Cookie).filter(Cookie.name == order.cookie_name).first()
+        if cookie:
+            order.total_price = cookie.price * order.quantity
+        else:
+            # Fallback if cookie name doesn't match
+            order.total_price = 0.0
+
     # Create order in database
     db_order = Order(**order.dict())
     db.add(db_order)
