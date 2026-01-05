@@ -496,6 +496,8 @@ const AdminOrders: React.FC = () => {
                         </form>
                     </div>
                 </div>
+            )}
+
             {/* Edit Order Modal */}
             {isEditModalOpen && editingOrder && (
                 <div
