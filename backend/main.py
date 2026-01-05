@@ -149,7 +149,10 @@ async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     
     # Send email notification asynchronously (don't wait for it)
     try:
+        from email_service import send_discord_notification
         asyncio.create_task(send_order_notification(order.dict()))
+        # Send Discord Notification as well
+        asyncio.create_task(send_discord_notification(order.dict()))
     except Exception as e:
         print(f"⚠️  Email notification failed: {str(e)}")
         # Don't fail the order creation if email fails

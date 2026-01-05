@@ -219,8 +219,34 @@ const AdminOrders: React.FC = () => {
         order.cookie_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const handleDeleteOrder = async (id: number) => {
+        if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) return;
+
+        try {
+            const token = localStorage.getItem('admin_token');
+            const response = await fetch(`${API_URL.replace('/api', '')}/api/admin/orders/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                // Remove locally
+                setOrders(orders.filter(o => o.id !== id));
+                // Play delete sound if you want, or just alert
+            } else {
+                alert('Failed to delete order');
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            alert('Error deleting order');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
+            {/* Audio for notifications */}
+            <audio id="notificationSound" src="/notification.mp3" />
+
             <div className="bg-white shadow-sm mb-6">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
                     <h1 className="text-2xl font-black">Customer Orders</h1>
@@ -352,10 +378,10 @@ const AdminOrders: React.FC = () => {
                                                 Edit
                                             </button>
                                             <button
-                                                onClick={() => setSelectedOrder(order)}
-                                                className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
+                                                onClick={() => handleDeleteOrder(order.id)}
+                                                className="text-red-600 hover:text-red-800 font-semibold text-sm"
                                             >
-                                                View
+                                                Delete
                                             </button>
                                         </td>
                                     </tr>

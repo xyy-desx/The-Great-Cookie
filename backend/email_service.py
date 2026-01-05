@@ -93,3 +93,57 @@ async def send_order_notification(order_data: dict):
         error_msg = f"Failed to send email: {str(e)}"
         print(f"❌ {error_msg}")
         return error_msg
+
+async def send_discord_notification(order_data: dict):
+    """Send order notification to Discord via Webhook"""
+    webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
+    if not webhook_url:
+        print("⚠️ Discord Webhook URL not found. Skipping.")
+        return
+
+    import aiohttp
+    
+    # Format currency
+    total_price = order_data.get('total_price', 0)
+    formatted_price = f"₱{total_price:,.2f}" if total_price else "Pending Calc"
+
+    embed = {
+        "title": "🍪 New Cookie Order!",
+        "color": 16753920, # Orange
+        "fields": [
+            {"name": "Customer", "value": order_data['customer_name'], "inline": True},
+            {"name": "Contact", "value": order_data['contact'], "inline": True},
+            {"name": "Cookie", "value": order_data['cookie_name'], "inline": True},
+            {"name": "Quantity", "value": str(order_data['quantity']), "inline": True},
+            {"name": "Total Price", "value": formatted_price, "inline": True},
+            {"name": "Payment", "value": order_data.get('payment_method', 'N/A'), "inline": True},
+            {"name": "Source", "value": order_data.get('order_source', 'website').upper(), "inline": True},
+        ],
+        "footer": {"text": "The Great Cookie Admin System"}
+    }
+    
+    # Add notes if verified
+    if order_data.get('notes'):
+        embed['fields'].append({"name": "Notes", "value": order_data['notes'], "inline": False})
+    
+    # Add Delivery if verified
+    if order_data.get('delivery_address'):
+        embed['fields'].append({"name": "Address", "value": order_data['delivery_address'], "inline": False})
+
+    payload = {
+        "content": "🚨 **New Order Received!** 🚨",
+        "embeds": [embed]
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(webhook_url, json=payload) as response:
+                if response.status == 204:
+                    print("✅ Discord Notification Sent!")
+                    return "SUCCESS"
+                else:
+                    print(f"⚠️ Discord Failed: {response.status}")
+                    return f"Failed: {response.status}"
+    except Exception as e:
+        print(f"❌ Discord Error: {str(e)}")
+        return str(e)
