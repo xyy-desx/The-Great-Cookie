@@ -1,7 +1,22 @@
-{
     "rewrites": [
         {
-            "source": "/((?!cookies/|assets/|uploads/|logo.png|favicon.ico).*)",
+            "source": "/",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/menu",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/about",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/login",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/admin(.*)",
             "destination": "/index.html"
         }
     ]
