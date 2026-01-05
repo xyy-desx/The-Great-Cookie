@@ -132,10 +132,15 @@ async def startup_event():
     import asyncio
     from discord_bot import client
     token = os.getenv("DISCORD_BOT_TOKEN")
-    if token:
-        asyncio.create_task(client.start(token))
+    if token and token != "your_discord_bot_token_here":
+        try:
+            # We wrap this in a task, but if it fails immediately 'await' might raise.
+            # However, start() is async.
+            asyncio.create_task(client.start(token))
+        except Exception as e:
+             print(f"⚠️ Discord Bot failed to start: {e}")
     else:
-        print("⚠️ No DISCORD_BOT_TOKEN found. Bot will not start.")
+        print("⚠️ No valid DISCORD_BOT_TOKEN found. Bot will not start.")
 
 @app.post("/api/orders", response_model=OrderResponse)
 async def create_order(order: OrderCreate, db: Session = Depends(get_db)):

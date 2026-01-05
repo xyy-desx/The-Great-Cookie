@@ -268,3 +268,37 @@ def get_revenue_analytics(db: Session = Depends(get_db), admin: str = Depends(ge
             } for item in daily_sales
         ]
     }
+
+# Review Management
+@router.get("/reviews")
+def get_all_reviews(db: Session = Depends(get_db), admin: str = Depends(get_current_admin)):
+    return db.query(Review).order_by(Review.created_at.desc()).all()
+
+@router.put("/reviews/{review_id}/approve")
+def approve_review(
+    review_id: int,
+    db: Session = Depends(get_db),
+    admin: str = Depends(get_current_admin)
+):
+    review = db.query(Review).filter(Review.id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    
+    review.approved = True
+    db.commit()
+    return {"message": "Review approved"}
+
+@router.delete("/reviews/{review_id}")
+def delete_review(
+    review_id: int,
+    db: Session = Depends(get_db),
+    admin: str = Depends(get_current_admin)
+):
+    review = db.query(Review).filter(Review.id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    
+    db.delete(review)
+    db.commit()
+    return {"message": "Review deleted"}
+
