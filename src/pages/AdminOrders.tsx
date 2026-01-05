@@ -54,7 +54,7 @@ const AdminOrders: React.FC = () => {
 
         // Poll for new orders every 30 seconds
         const interval = setInterval(() => {
-            fetchOrders(true); // silent refresh
+            fetchOrders(); // silent refresh
         }, 30000);
 
         return () => clearInterval(interval);
@@ -82,7 +82,7 @@ const AdminOrders: React.FC = () => {
     // Track previous pending count to play sound
     const [prevPendingCount, setPrevPendingCount] = useState(0);
 
-    const fetchOrders = async (silent = false) => {
+    const fetchOrders = async () => {
         const token = localStorage.getItem('admin_token');
         const url = filterStatus === 'all'
             ? `${API_URL.replace('/api', '')}/api/admin/orders`
