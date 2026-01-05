@@ -59,6 +59,44 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": admin.username})
     return {"access_token": access_token}
 
+# Cookie Management
+@router.get("/cookies")
+def get_admin_cookies(db: Session = Depends(get_db), admin: str = Depends(get_current_admin)):
+    return db.query(Cookie).all()
+
+@router.put("/cookies/{cookie_id}")
+def update_cookie(
+    cookie_id: int, 
+    cookie_update: CookieUpdate, 
+    db: Session = Depends(get_db), 
+    admin: str = Depends(get_current_admin)
+):
+    cookie = db.query(Cookie).filter(Cookie.id == cookie_id).first()
+    if not cookie:
+        raise HTTPException(status_code=404, detail="Cookie not found")
+    
+    update_data = cookie_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(cookie, key, value)
+    
+    db.commit()
+    db.refresh(cookie)
+    return cookie
+
+@router.delete("/cookies/{cookie_id}")
+def delete_cookie(
+    cookie_id: int, 
+    db: Session = Depends(get_db), 
+    admin: str = Depends(get_current_admin)
+):
+    cookie = db.query(Cookie).filter(Cookie.id == cookie_id).first()
+    if not cookie:
+        raise HTTPException(status_code=404, detail="Cookie not found")
+    
+    db.delete(cookie)
+    db.commit()
+    return {"message": "Cookie deleted"}
+
 @router.patch("/orders/{order_id}")
 def update_order(
     order_id: int, 
