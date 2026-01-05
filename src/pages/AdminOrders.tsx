@@ -37,6 +37,7 @@ const AdminOrders: React.FC = () => {
         order_source: 'manual'
     });
     const [submitting, setSubmitting] = useState(false);
+    const [cookies, setCookies] = useState<{ id: number; name: string }[]>([]);
 
     // Edit Order State
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -49,6 +50,7 @@ const AdminOrders: React.FC = () => {
 
     useEffect(() => {
         fetchOrders();
+        fetchCookies();
 
         // Poll for new orders every 30 seconds
         const interval = setInterval(() => {
@@ -57,6 +59,25 @@ const AdminOrders: React.FC = () => {
 
         return () => clearInterval(interval);
     }, [filterStatus]);
+
+    const fetchCookies = async () => {
+        try {
+            const response = await fetch(`${API_URL.replace('/api', '')}/api/cookies`);
+            if (response.ok) {
+                const data = await response.json();
+                setCookies(data);
+                // Set default if empty
+                if (data.length > 0 && manualOrder.cookie_name === 'Alcapone Cookie') {
+                    // Keep default or update? Let's just keep 'Alcapone Cookie' as initial state string
+                    // but ensuring it matches one in the list is better. 
+                    // Actually, let's set the first cookie as default for manual order
+                    setManualOrder(prev => ({ ...prev, cookie_name: data[0].name }));
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch cookies", error);
+        }
+    };
 
     // Track previous pending count to play sound
     const [prevPendingCount, setPrevPendingCount] = useState(0);
@@ -487,12 +508,13 @@ const AdminOrders: React.FC = () => {
                                         value={manualOrder.cookie_name}
                                         onChange={e => setManualOrder({ ...manualOrder, cookie_name: e.target.value })}
                                     >
-                                        <option value="Alcapone Cookie">Alcapone Cookie</option>
-                                        <option value="Biscoff Campfire">Biscoff Campfire</option>
-                                        <option value="Chocobomb Walnut">Chocobomb Walnut</option>
-                                        <option value="Classic Belgian">Classic Belgian</option>
-                                        <option value="Funfetti Cookie">Funfetti Cookie</option>
-                                        <option value="Red Velvet">Red Velvet</option>
+                                        {cookies.length > 0 ? (
+                                            cookies.map(cookie => (
+                                                <option key={cookie.id} value={cookie.name}>{cookie.name}</option>
+                                            ))
+                                        ) : (
+                                            <option value="Alcapone Cookie">Loading...</option>
+                                        )}
                                     </select>
                                 </div>
                                 <div>
@@ -552,12 +574,13 @@ const AdminOrders: React.FC = () => {
                                         value={editingOrder.cookie_name}
                                         onChange={e => setEditingOrder({ ...editingOrder, cookie_name: e.target.value })}
                                     >
-                                        <option value="Alcapone Cookie">Alcapone Cookie</option>
-                                        <option value="Biscoff Campfire">Biscoff Campfire</option>
-                                        <option value="Chocobomb Walnut">Chocobomb Walnut</option>
-                                        <option value="Classic Belgian">Classic Belgian</option>
-                                        <option value="Funfetti Cookie">Funfetti Cookie</option>
-                                        <option value="Red Velvet">Red Velvet</option>
+                                        {cookies.length > 0 ? (
+                                            cookies.map(cookie => (
+                                                <option key={cookie.id} value={cookie.name}>{cookie.name}</option>
+                                            ))
+                                        ) : (
+                                            <option value={editingOrder.cookie_name}>{editingOrder.cookie_name}</option>
+                                        )}
                                     </select>
                                 </div>
                                 <div>

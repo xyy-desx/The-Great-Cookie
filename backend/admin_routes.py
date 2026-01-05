@@ -54,23 +54,30 @@ def update_order(
     
     # Update fields
     update_data = order_update.dict(exclude_unset=True)
+    print(f"DEBUG: Updating Order {order_id} with data: {update_data}")
     
     # If cookie or quantity changed, recalculate price
     if 'cookie_name' in update_data or 'quantity' in update_data:
         new_cookie_name = update_data.get('cookie_name', order.cookie_name)
         new_quantity = update_data.get('quantity', order.quantity)
+        print(f"DEBUG: Recalculating Price. Cookie: {new_cookie_name}, Qty: {new_quantity}")
         
         # Get cookie price
         cookie = db.query(Cookie).filter(Cookie.name == new_cookie_name).first()
         if cookie:
             # Update price based on new quantity * cookie price
-            order.total_price = cookie.price * new_quantity
+            new_total = cookie.price * new_quantity
+            order.total_price = new_total
+            print(f"DEBUG: Found Cookie Price: {cookie.price}. New Total: {new_total}")
+        else:
+            print(f"DEBUG: Cookie '{new_cookie_name}' NOT FOUND. Cannot recalculate price.")
     
     for key, value in update_data.items():
         setattr(order, key, value)
     
     db.commit()
     db.refresh(order)
+    print(f"DEBUG: Update Committed. Final Order: {order.quantity}x {order.cookie_name} = {order.total_price}")
     
     return order
 
