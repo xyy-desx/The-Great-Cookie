@@ -1,0 +1,162 @@
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+from database import engine, get_db, Base
+from models import Cookie, Order, Review
+from admin_routes import router as admin_router
+
+load_dotenv()
+
+# Create tables
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="The Great Cookie API")
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include admin routes
+app.include_router(admin_router)
+
+# Pydantic schemas
+class CookieCreate(BaseModel):
+    name: str
+    description: str
+    ingredients: str
+    category: str
+    price: float
+    image: str
+
+class CookieResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+    ingredients: str
+    category: str
+    price: float
+    image: str
+
+    class Config:
+        from_attributes = True
+
+class OrderCreate(BaseModel):
+    customer_name: str
+    contact: str
+    cookie_name: str
+    quantity: int
+    notes: Optional[str] = None
+    delivery_address: Optional[str] = None
+    total_price: Optional[float] = None
+    payment_method: Optional[str] = None
+    delivery_date: Optional[str] = None
+    order_source: Optional[str] = "website"
+
+class OrderResponse(BaseModel):
+    id: int
+    customer_name: str
+    contact: str
+    cookie_name: str
+    quantity: int
+    notes: Optional[str]
+    delivery_address: Optional[str]
+    total_price: Optional[float]
+    payment_method: Optional[str]
+    delivery_date: Optional[str]
+    order_source: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ReviewCreate(BaseModel):
+    customer_name: str
+    rating: int
+    comment: str
+
+class ReviewResponse(BaseModel):
+    id: int
+    customer_name: str
+    rating: int
+    comment: str
+    approved: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# Routes
+@app.get("/")
+def read_root():
+    return {"message": "The Great Cookie API"}
+
+@app.get("/api/cookies", response_model=List[CookieResponse])
+def get_cookies(search: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(Cookie)
+    if search:
+        query = query.filter(
+            (Cookie.name.ilike(f"%{search}%")) |
+            (Cookie.description.ilike(f"%{search}%"))
+        )
+    return query.all()
+
+@app.post("/api/cookies", response_model=CookieResponse)
+def create_cookie(cookie: CookieCreate, db: Session = Depends(get_db)):
+    db_cookie = Cookie(**cookie.dict())
+    db.add(db_cookie)
+    db.commit()
+    db.refresh(db_cookie)
+    return db_cookie
+
+@app.post("/api/orders", response_model=OrderResponse)
+async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
+    from email_service import send_order_notification
+    import asyncio
+    
+    # Create order in database
+    db_order = Order(**order.dict())
+    db.add(db_order)
+    db.commit()
+    db.refresh(db_order)
+    
+    # Send email notification asynchronously (don't wait for it)
+    try:
+        asyncio.create_task(send_order_notification(order.dict()))
+    except Exception as e:
+        print(f"⚠️  Email notification failed: {str(e)}")
+        # Don't fail the order creation if email fails
+    
+    return db_order
+
+@app.get("/api/orders", response_model=List[OrderResponse])
+def get_orders(db: Session = Depends(get_db)):
+    return db.query(Order).order_by(Order.created_at.desc()).all()
+
+@app.post("/api/reviews", response_model=ReviewResponse)
+def create_review(review: ReviewCreate, db: Session = Depends(get_db)):
+    db_review = Review(**review.dict(), approved=False)  # Pending approval by default
+    db.add(db_review)
+    db.commit()
+    db.refresh(db_review)
+    return db_review
+
+@app.get("/api/reviews", response_model=List[ReviewResponse])
+def get_reviews(db: Session = Depends(get_db)):
+    return db.query(Review).filter(Review.approved == True).order_by(Review.created_at.desc()).all()
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
