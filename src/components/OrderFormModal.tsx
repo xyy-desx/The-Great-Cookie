@@ -59,6 +59,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, select
             });
         } catch (error) {
             console.error("Failed to save messenger order to DB", error);
+            alert("⚠️ Warning: Could not save order to database. Please check your internet connection.");
             // Continue anyway so the user can still message
         }
 
