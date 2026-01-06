@@ -11,12 +11,13 @@ A modern, full-stack e-commerce website for artisan cookies with a comprehensive
 - 📱 Responsive design (mobile-friendly)
 - 🛒 Place orders (direct or via Messenger)
 - ⭐ Submit and view reviews
+- 📧 Email notifications for orders
 - 🔍 Search and filter cookies by category
 
 ### Admin Panel Features
 - 📊 **Revenue Analytics** - Track sales, revenue, and trends
-- 🔔 **Discord Bot Notifications** - Real-time alerts & order management via Discord
 - 📥 **Export Orders** - Download orders as CSV for accounting
+- 🔔 **Order Notifications** - Real-time alerts for new orders
 - 🍪 **Cookie Management** - Add, edit, delete cookies with image upload
 - 📝 **Order Management** - View, filter, and update order status
 - ⭐ **Review Management** - Approve or delete customer reviews
@@ -35,13 +36,15 @@ A modern, full-stack e-commerce website for artisan cookies with a comprehensive
 - **PostgreSQL** - Database
 - **JWT** - Authentication
 - **SQLAlchemy** - ORM
-- **Discord.py** - Bot integrations (Notifications & Slash Commands)
+- **FastAPI Mail** - Email notifications
+
+
 
 ## 📦 Installation
 
 ### Prerequisites
 - Node.js 18+
-- Python 3.11+
+- Python 3.9+
 - PostgreSQL 13+
 
 ### Frontend Setup
@@ -85,22 +88,14 @@ VITE_API_URL=http://localhost:8000/api
 ```
 DATABASE_URL=postgresql://postgres:password@localhost:5432/greatcookie
 CORS_ORIGINS=http://localhost:5173
-
-# Discord Bot Configuration (Optional - for /sales commands)
-DISCORD_BOT_TOKEN=your_bot_token_here
-DISCORD_CHANNEL_ID=your_channel_id_here
-
-# Discord Webhook (Required for Order Notifications)
-DISCORD_WEBHOOK_URL=your_webhook_url_here
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+NOTIFICATION_EMAIL=your-email@gmail.com
 ```
 
-## 🌐 Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions (Render/Railway).
-
-**Quick Deploy:**
-- **Frontend:** Vercel / Railway
-- **Backend:** Railway / Render
 
 ## 📁 Project Structure
 
@@ -115,8 +110,6 @@ The-Great-Cookie/
 │   ├── main.py           # API entry point
 │   ├── models.py         # Database models
 │   ├── admin_routes.py   # Admin endpoints
-│   ├── email_service.py  # Email & Webhook Logic
-│   ├── discord_bot.py    # Discord bot logic
 │   ├── seed.py           # Database seeding
 │   └── create_admin.py   # Admin user creation
 └── public/               # Static assets
@@ -131,19 +124,20 @@ The-Great-Cookie/
 - `/admin/reviews` - Manage reviews
 - `/admin/analytics` - Revenue analytics
 
-## 🤖 Discord Integration
+## 📧 Email Notifications
 
-The system uses **Discord Webhooks** for instant order alerts.
-
-- **Order Notifications**: Sent instantly to your formatted Discord channel via Webhook.
-- **Bot Commands** (Optional): If you configure the Bot Token, you can also use:
-  - `/sales` - View today's revenue.
-  - `/pending` - List pending orders.
+The system automatically sends email notifications when:
+- New orders are placed
+- Orders are confirmed
+- Orders are out for delivery
 
 ## 🐛 Troubleshooting
 
 ### Database Connection Error
 ```bash
+# Make sure PostgreSQL is running
+pg_ctl status
+
 # Check database exists
 psql -l | grep greatcookie
 ```
@@ -152,6 +146,15 @@ psql -l | grep greatcookie
 ```bash
 # Frontend (default: 5173)
 # Backend (default: 8000)
+# Kill processes using these ports if needed
+```
+
+### Build Errors
+```bash
+# Clear cache and reinstall
+rm -rf node_modules dist
+npm install
+npm run build
 ```
 
 ## 📝 License
@@ -160,4 +163,7 @@ This project is private and proprietary.
 
 ## 👨‍💻 Developer
 
-**Desxzor Navarro**
+**Desxzor Navarro** - 
+
+---
+
