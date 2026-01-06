@@ -45,8 +45,9 @@ const AdminAnalytics: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify center">
-                <p className="text-xl">Loading analytics...</p>
+            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-amber-900 border-t-transparent mb-4"></div>
+                <p className="text-xl font-bold text-gray-600 animate-pulse">Loading analytics...</p>
             </div>
         );
     }
