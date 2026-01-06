@@ -108,15 +108,20 @@ class ReviewResponse(BaseModel):
 def read_root():
     return {"message": "The Great Cookie API"}
 
+@app.get("/health")
+def health_check():
+    """Health check endpoint for uptime monitoring (prevents Render cold starts)"""
+    return {"status": "ok", "timestamp": datetime.now().isoformat()}
+
 @app.get("/api/cookies", response_model=List[CookieResponse])
-def get_cookies(search: Optional[str] = None, db: Session = Depends(get_db)):
+def get_cookies(search: Optional[str] = None, limit: int = 100, db: Session = Depends(get_db)):
     query = db.query(Cookie)
     if search:
         query = query.filter(
             (Cookie.name.ilike(f"%{search}%")) |
             (Cookie.description.ilike(f"%{search}%"))
         )
-    return query.all()
+    return query.limit(limit).all()
 
 @app.post("/api/cookies", response_model=CookieResponse)
 def create_cookie(cookie: CookieCreate, db: Session = Depends(get_db)):
@@ -167,8 +172,8 @@ async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     # Send notifications asynchronously
     try:
         from email_service import send_discord_notification
-        # 1. Email (Legacy/Fallback)
-        asyncio.create_task(send_order_notification(order.dict()))
+        # 1. Email (Disabled - using Discord Webhook)
+        # asyncio.create_task(send_order_notification(order.dict()))
         # 2. Discord Webhook (Simpler, Reliable)
         asyncio.create_task(send_discord_notification(order.dict()))
     except Exception as e:
@@ -189,8 +194,8 @@ def create_review(review: ReviewCreate, db: Session = Depends(get_db)):
     return db_review
 
 @app.get("/api/reviews", response_model=List[ReviewResponse])
-def get_reviews(db: Session = Depends(get_db)):
-    return db.query(Review).filter(Review.approved == True).order_by(Review.created_at.desc()).all()
+def get_reviews(limit: int = 50, db: Session = Depends(get_db)):
+    return db.query(Review).filter(Review.approved == True).order_by(Review.created_at.desc()).limit(limit).all()
 
 @app.get("/test-email")
 async def test_email():
