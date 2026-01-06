@@ -11,7 +11,7 @@ A modern, full-stack e-commerce website for artisan cookies with a comprehensive
 - 📱 Responsive design (mobile-friendly)
 - 🛒 Place orders (direct or via Messenger)
 - ⭐ Submit and view reviews
-- 📧 Email notifications for orders
+- 🔔 Discord notifications for orders
 - 🔍 Search and filter cookies by category
 
 ### Admin Panel Features
@@ -36,7 +36,7 @@ A modern, full-stack e-commerce website for artisan cookies with a comprehensive
 - **PostgreSQL** - Database
 - **JWT** - Authentication
 - **SQLAlchemy** - ORM
-- **FastAPI Mail** - Email notifications
+- **Discord Webhook** - Order notifications
 
 
 
@@ -88,11 +88,9 @@ VITE_API_URL=http://localhost:8000/api
 ```
 DATABASE_URL=postgresql://postgres:password@localhost:5432/greatcookie
 CORS_ORIGINS=http://localhost:5173
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
-NOTIFICATION_EMAIL=your-email@gmail.com
+
+# Discord Webhook (Required for Order Notifications)
+DISCORD_WEBHOOK_URL=your_webhook_url_here
 ```
 
 
@@ -124,12 +122,10 @@ The-Great-Cookie/
 - `/admin/reviews` - Manage reviews
 - `/admin/analytics` - Revenue analytics
 
-## 📧 Email Notifications
+## 🔔 Discord Notifications
 
-The system automatically sends email notifications when:
-- New orders are placed
-- Orders are confirmed
-- Orders are out for delivery
+The system sends instant alerts to your Discord channel via Webhook when:
+- New orders are placed (with customer details & total)
 
 ## 🐛 Troubleshooting
 
