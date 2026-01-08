@@ -107,6 +107,19 @@ async def send_discord_notification(order_data: dict):
     total_price = order_data.get('total_price', 0)
     formatted_price = f"₱{total_price:,.2f}" if total_price else "Pending Calc"
 
+    # Format status with emoji
+    status = order_data.get('status', 'pending').lower()
+    status_emojis = {
+        'pending': '🟡',
+        'confirmed': '✅',
+        'preparing': '👨‍🍳',
+        'out_for_delivery': '🚚',
+        'completed': '✅',
+        'cancelled': '❌'
+    }
+    status_emoji = status_emojis.get(status, '⚪')
+    formatted_status = f"{status_emoji} {status.replace('_', ' ').title()}"
+
     embed = {
         "title": "🍪 New Cookie Order!",
         "color": 16753920, # Orange
@@ -117,6 +130,7 @@ async def send_discord_notification(order_data: dict):
             {"name": "Quantity", "value": str(order_data['quantity']), "inline": True},
             {"name": "Total Price", "value": formatted_price, "inline": True},
             {"name": "Payment", "value": order_data.get('payment_method', 'N/A'), "inline": True},
+            {"name": "Status", "value": formatted_status, "inline": True},
             {"name": "Source", "value": order_data.get('order_source', 'website').upper(), "inline": True},
         ],
         "footer": {"text": "The Great Cookie Admin System"}
@@ -129,6 +143,10 @@ async def send_discord_notification(order_data: dict):
     # Add Delivery if verified
     if order_data.get('delivery_address'):
         embed['fields'].append({"name": "Address", "value": order_data['delivery_address'], "inline": False})
+    
+    # Add Delivery Date if specified
+    if order_data.get('delivery_date'):
+        embed['fields'].append({"name": "📅 Delivery Date", "value": order_data['delivery_date'], "inline": False})
 
     payload = {
         "content": "🚨 **New Order Received!** 🚨",
@@ -147,3 +165,83 @@ async def send_discord_notification(order_data: dict):
     except Exception as e:
         print(f"❌ Discord Error: {str(e)}")
         return str(e)
+
+async def send_discord_status_update(order_data: dict, old_status: str = None):
+    """Send Discord notification when order status is updated in admin panel"""
+    webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
+    if not webhook_url:
+        print("⚠️ Discord Webhook URL not found. Skipping.")
+        return
+
+    import aiohttp
+    
+    # Format currency
+    total_price = order_data.get('total_price', 0)
+    formatted_price = f"₱{total_price:,.2f}" if total_price else "Pending Calc"
+
+    # Format status with emoji
+    status = order_data.get('status', 'pending').lower()
+    status_emojis = {
+        'pending': '🟡',
+        'confirmed': '✅',
+        'preparing': '👨‍🍳',
+        'out_for_delivery': '🚚',
+        'completed': '✅',
+        'cancelled': '❌'
+    }
+    status_emoji = status_emojis.get(status, '⚪')
+    formatted_status = f"{status_emoji} {status.replace('_', ' ').title()}"
+    
+    # Different color for status updates
+    status_colors = {
+        'pending': 16776960,      # Yellow
+        'confirmed': 5763719,     # Green
+        'preparing': 3447003,     # Blue
+        'out_for_delivery': 15105570,  # Light orange
+        'completed': 2067276,     # Dark green
+        'cancelled': 15158332     # Red
+    }
+    embed_color = status_colors.get(status, 3447003)
+
+    embed = {
+        "title": "📝 Order Status Updated!",
+        "color": embed_color,
+        "fields": [
+            {"name": "Order ID", "value": f"#{order_data.get('id', 'N/A')}", "inline": True},
+            {"name": "Customer", "value": order_data['customer_name'], "inline": True},
+            {"name": "Cookie", "value": order_data['cookie_name'], "inline": True},
+            {"name": "Quantity", "value": str(order_data['quantity']), "inline": True},
+            {"name": "Total Price", "value": formatted_price, "inline": True},
+            {"name": "Status", "value": formatted_status, "inline": True},
+        ],
+        "footer": {"text": "Updated by Admin"}
+    }
+    
+    # Add delivery date if present
+    if order_data.get('delivery_date'):
+        embed['fields'].append({"name": "📅 Delivery Date", "value": order_data['delivery_date'], "inline": False})
+    
+    # Show status change if old status provided
+    status_message = "📢 **Order Status Changed!**"
+    if old_status and old_status != status:
+        old_emoji = status_emojis.get(old_status.lower(), '⚪')
+        status_message = f"📢 Status: {old_emoji} {old_status.title()} → {status_emoji} {status.title()}"
+
+    payload = {
+        "content": status_message,
+        "embeds": [embed]
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(webhook_url, json=payload) as response:
+                if response.status == 204:
+                    print("✅ Discord Status Update Sent!")
+                    return "SUCCESS"
+                else:
+                    print(f"⚠️ Discord Failed: {response.status}")
+                    return f"Failed: {response.status}"
+    except Exception as e:
+        print(f"❌ Discord Error: {str(e)}")
+        return str(e)
+

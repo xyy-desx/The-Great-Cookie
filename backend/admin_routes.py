@@ -109,15 +109,21 @@ def get_admin_orders(status: Optional[str] = None, db: Session = Depends(get_db)
     return query.order_by(Order.created_at.desc()).all()
 
 @router.patch("/orders/{order_id}")
-def update_order(
+async def update_order(
     order_id: int, 
     order_update: OrderUpdate, 
     db: Session = Depends(get_db), 
     admin: str = Depends(get_current_admin)
 ):
+    from email_service import send_discord_status_update
+    import asyncio
+    
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Store old status for Discord notification
+    old_status = order.status
     
     # Update fields
     update_data = order_update.dict(exclude_unset=True)
@@ -145,6 +151,24 @@ def update_order(
     db.commit()
     db.refresh(order)
     print(f"DEBUG: Update Committed. Final Order: {order.quantity}x {order.cookie_name} = {order.total_price}")
+    
+    # Send Discord notification if status changed or significant update
+    try:
+        order_dict = {
+            'id': order.id,
+            'customer_name': order.customer_name,
+            'contact': order.contact,
+            'cookie_name': order.cookie_name,
+            'quantity': order.quantity,
+            'total_price': order.total_price,
+            'payment_method': order.payment_method,
+            'status': order.status,
+            'delivery_date': order.delivery_date,
+            'delivery_address': order.delivery_address
+        }
+        asyncio.create_task(send_discord_status_update(order_dict, old_status))
+    except Exception as e:
+        print(f"⚠️ Failed to send Discord update: {str(e)}")
     
     return order
 
