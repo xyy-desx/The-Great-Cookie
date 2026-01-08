@@ -81,6 +81,11 @@ def update_cookie(
     
     db.commit()
     db.refresh(cookie)
+    
+    # Invalidate cookie cache
+    from main import invalidate_cache
+    invalidate_cache("cookies")
+    
     return cookie
 
 @router.delete("/cookies/{cookie_id}")
@@ -95,6 +100,11 @@ def delete_cookie(
     
     db.delete(cookie)
     db.commit()
+    
+    # Invalidate cookie cache
+    from main import invalidate_cache
+    invalidate_cache("cookies")
+    
     return {"message": "Cookie deleted"}
 
     db.delete(cookie)
@@ -310,6 +320,11 @@ def approve_review(
     
     review.approved = True
     db.commit()
+    
+    # Invalidate reviews cache
+    from main import invalidate_cache
+    invalidate_cache("reviews")
+    
     return {"message": "Review approved"}
 
 @router.delete("/reviews/{review_id}")
@@ -324,5 +339,10 @@ def delete_review(
     
     db.delete(review)
     db.commit()
+    
+    # Invalidate reviews cache
+    from main import invalidate_cache
+    invalidate_cache("reviews")
+    
     return {"message": "Review deleted"}
 

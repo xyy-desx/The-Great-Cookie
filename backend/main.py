@@ -1,11 +1,14 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from functools import lru_cache
+import time
 
 from database import engine, get_db, Base
 from models import Cookie, Order, Review
@@ -32,8 +35,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add GZip compression for responses larger than 1KB
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 # Include admin routes
 app.include_router(admin_router)
+
+# Simple in-memory cache with timestamps
+cache_store = {}
+CACHE_TTL = {"cookies": 300, "reviews": 60}  # 5 min for cookies, 1 min for reviews
+
+def get_cache(key: str):
+    if key in cache_store:
+        data, timestamp = cache_store[key]
+        ttl = CACHE_TTL.get(key.split(":")[0], 60)
+        if time.time() - timestamp < ttl:
+            return data
+    return None
+
+def set_cache(key: str, data):
+    cache_store[key] = (data, time.time())
+
+def invalidate_cache(prefix: str):
+    keys_to_delete = [k for k in cache_store.keys() if k.startswith(prefix)]
+    for k in keys_to_delete:
+        del cache_store[k]
 
 # Pydantic schemas
 class CookieCreate(BaseModel):
@@ -115,13 +141,26 @@ def health_check():
 
 @app.get("/api/cookies", response_model=List[CookieResponse])
 def get_cookies(search: Optional[str] = None, limit: int = 100, db: Session = Depends(get_db)):
+    # Create cache key based on search params
+    cache_key = f"cookies:search={search or ''}:limit={limit}"
+    
+    # Check cache first
+    cached_data = get_cache(cache_key)
+    if cached_data is not None:
+        return cached_data
+    
+    # Fetch from database
     query = db.query(Cookie)
     if search:
         query = query.filter(
             (Cookie.name.ilike(f"%{search}%")) |
             (Cookie.description.ilike(f"%{search}%"))
         )
-    return query.limit(limit).all()
+    results = query.limit(limit).all()
+    
+    # Store in cache
+    set_cache(cache_key, results)
+    return results
 
 @app.post("/api/cookies", response_model=CookieResponse)
 def create_cookie(cookie: CookieCreate, db: Session = Depends(get_db)):
@@ -129,6 +168,9 @@ def create_cookie(cookie: CookieCreate, db: Session = Depends(get_db)):
     db.add(db_cookie)
     db.commit()
     db.refresh(db_cookie)
+    
+    # Invalidate cookie cache
+    invalidate_cache("cookies")
     return db_cookie
 
 # Startup Event to Launch Bot
@@ -191,11 +233,27 @@ def create_review(review: ReviewCreate, db: Session = Depends(get_db)):
     db.add(db_review)
     db.commit()
     db.refresh(db_review)
+    
+    # Invalidate reviews cache
+    invalidate_cache("reviews")
     return db_review
 
 @app.get("/api/reviews", response_model=List[ReviewResponse])
 def get_reviews(limit: int = 50, db: Session = Depends(get_db)):
-    return db.query(Review).filter(Review.approved == True).order_by(Review.created_at.desc()).limit(limit).all()
+    # Create cache key
+    cache_key = f"reviews:limit={limit}"
+    
+    # Check cache first
+    cached_data = get_cache(cache_key)
+    if cached_data is not None:
+        return cached_data
+    
+    # Fetch from database
+    results = db.query(Review).filter(Review.approved == True).order_by(Review.created_at.desc()).limit(limit).all()
+    
+    # Store in cache
+    set_cache(cache_key, results)
+    return results
 
 @app.get("/test-email")
 async def test_email():

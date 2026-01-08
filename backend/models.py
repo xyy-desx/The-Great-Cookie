@@ -9,7 +9,7 @@ class Cookie(Base):
     name = Column(String, unique=True, index=True)
     description = Column(Text)
     ingredients = Column(Text)
-    category = Column(String)
+    category = Column(String, index=True)  # Index for category filtering
     price = Column(Float)
     image = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -39,8 +39,8 @@ class Review(Base):
     customer_name = Column(String)
     rating = Column(Integer)
     comment = Column(Text)
-    approved = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    approved = Column(Boolean, default=False, index=True)  # Index for filtering approved reviews
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)  # Index for ordering
 
 class Admin(Base):
     __tablename__ = "admins"

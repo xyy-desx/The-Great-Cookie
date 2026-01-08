@@ -24,6 +24,7 @@ const Menu: React.FC<MenuProps> = ({ onOrderClick }) => {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [cookies, setCookies] = useState<Cookie[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const categories = ['All', 'Chocolate', 'Nutty', 'Caramel', 'Fruity', 'Classic'];
 
@@ -32,8 +33,23 @@ const Menu: React.FC<MenuProps> = ({ onOrderClick }) => {
     }, []);
 
     const fetchCookies = async () => {
+        setLoading(true);
+        setError(null);
+
         try {
-            const response = await fetch(`${API_URL}/cookies`);
+            // Add timeout to fetch request
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+            const response = await fetch(`${API_URL}/cookies`, {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
             // Add weight if not present
             const cookiesWithWeight = data.map((cookie: Cookie) => ({
@@ -41,8 +57,13 @@ const Menu: React.FC<MenuProps> = ({ onOrderClick }) => {
                 weight: cookie.weight || '120g'
             }));
             setCookies(cookiesWithWeight);
-        } catch (error) {
-            console.error('Error fetching cookies:', error);
+        } catch (err: any) {
+            if (err.name === 'AbortError') {
+                setError('Request timed out. Please check your connection and try again.');
+            } else {
+                setError('Failed to load menu. Please try again.');
+            }
+            console.error('Error fetching cookies:', err);
         } finally {
             setLoading(false);
         }
@@ -60,11 +81,59 @@ const Menu: React.FC<MenuProps> = ({ onOrderClick }) => {
         return matchesSearch && matchesCategory;
     });
 
+    // Skeleton Loader Component
+    const SkeletonCard = () => (
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden animate-pulse">
+            <div className="h-64 bg-gray-200"></div>
+            <div className="p-6 space-y-3">
+                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                <div className="h-10 bg-gray-200 rounded-full mt-4"></div>
+            </div>
+        </div>
+    );
+
     if (loading) {
         return (
             <section id="menu" className="py-16 md:py-24 px-6 md:px-12 max-w-7xl mx-auto">
+                <div className="text-center mb-12 animate-slide-up opacity-0" style={{ animationDelay: '0.1s' }}>
+                    <h2 className="text-4xl md:text-5xl font-black text-black mb-4">
+                        Our Menu
+                    </h2>
+                    <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+                        Handcrafted with premium ingredients, baked fresh with love
+                    </p>
+                    <div className="w-20 h-1 bg-black mx-auto mt-4"></div>
+                </div>
+
+                {/* Show skeleton loaders while loading */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <SkeletonCard key={i} />
+                    ))}
+                </div>
+            </section>
+        );
+    }
+
+    if (error) {
+        return (
+            <section id="menu" className="py-16 md:py-24 px-6 md:px-12 max-w-7xl mx-auto">
                 <div className="text-center">
-                    <p className="text-gray-500">Loading menu...</p>
+                    <div className="bg-red-50 border border-red-200 rounded-2xl p-8 max-w-md mx-auto">
+                        <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 className="text-xl font-bold text-red-900 mb-2">Oops!</h3>
+                        <p className="text-red-700 mb-4">{error}</p>
+                        <button
+                            onClick={fetchCookies}
+                            className="bg-black text-white font-bold py-3 px-8 rounded-full hover:bg-gray-800 transition-all"
+                        >
+                            Try Again
+                        </button>
+                    </div>
                 </div>
             </section>
         );
